@@ -1,0 +1,51 @@
+name: Build Mac preview release
+on:
+  push:
+    branches: [main]
+    paths:
+      - Songcrumb/Info.plist
+      - .github/workflows/release.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mac-preview-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'akshatdhabi/songcrumb' && github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Check source and regression suite
+        run: |
+          python3 Scripts/check_public.py
+          node --version
+          ./Scripts/test.sh
+      - name: Build developer DMG and ZIP
+        run: ./Scripts/release.sh
+      - name: Publish versioned preview downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Songcrumb/Info.plist)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists. Bump the app version before publishing a new download."
+            exit 1
+          fi
+          gh release create "$tag" --target "$RELEASE_COMMIT" --prerelease \
+            --title "Songcrumb $version · Mac preview" --notes-file docs/RELEASE-NOTES.md \
+            "build/release/Songcrumb-$version-arm64.dmg" \
+            "build/release/Songcrumb-$version-arm64.zip" \
+            "build/release/YouTubeMusicCompanion-$version.zip" \
+            build/release/SHA256SUMS.txt build/release/INSTALL.txt

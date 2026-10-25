@@ -18,6 +18,10 @@ For your own music:
 
 Closing Settings leaves Songcrumb running in the menu bar. Choose **Quit** there to exit. Music connections are off by default. Automatic internet lookup is preselected, but requests only start after you connect a source.
 
+## Compiled download
+
+Use the [versioned Mac preview release](https://github.com/akshatdhabi/songcrumb/releases/tag/v1.0.0) for a DMG or ZIP that runs without Xcode. Open the DMG, drag Songcrumb to Applications and eject it. The ZIP contains the same app. Read [INSTALL.txt](INSTALL.txt) for the app-specific macOS approval steps and checksums. This preview is ad-hoc signed, not notarized; a local source build remains an alternative. The release includes an optional YouTube Music companion ZIP.
+
 ## Build and run in Xcode
 
 1. Open `Songcrumb.xcodeproj` with Xcode 15 or later and a compatible macOS SDK. A current Xcode release is recommended for a current M5 Mac.

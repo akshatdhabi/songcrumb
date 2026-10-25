@@ -29,3 +29,7 @@ The project page uses paper, plum and restrained terracotta, with expressive edi
 Your music has something to say. Songcrumb keeps a few lines in view while you do your thing: a native macOS menu bar app that automatically finds lyrics and lets them follow the song.
 
 MIT covers the original code, artwork and preview text. It does not license third-party lyrics or player trademarks. The name is a chosen project identity; no trademark registration or legal clearance is claimed.
+
+## Documentation media
+
+`media/` contains real native app screenshots and a GIF encoded from native screenshot frames. The app was in original-text preview mode, with music connections disabled. These captures contain no commercial lyrics or personal listening history. The local project page’s desktop illustration is a separate, explicitly illustrative visual.

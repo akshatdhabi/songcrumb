@@ -15,6 +15,12 @@ Environment: arm64 Mac, macOS 26.4.1, Swift 6.3.3 and Apple Command Line Tools. 
 - Companion syntax and fixtures: sender isolation, fixed destination, pairing, no cookie forwarding, active-tab ownership and player metadata extraction.
 - Project page browser review: desktop and 390px narrow layout, attached/floating switch, highlight selection and original-text animation. The site has no remote runtime dependencies.
 
+## Download packaging
+
+The local arm64 app ZIP passed extraction, signature, architecture, version and email-absence checks. Its SHA-256 manifest matched every packaged file. The DMG mounted read-only and contained the verified app, Applications shortcut, install guide, licence and source commit record. A release workflow builds fresh downloads from the release commit, reruns regression checks and publishes a versioned GitHub prerelease. No GitHub Pages deployment is configured by this workflow.
+
+Documentation media consists of real native screenshots and a GIF encoded from captured original-text preview frames. No commercial lyric text or personal listening metadata appears in the captures.
+
 ## Audit fixes included
 
 Retained usable exact plain lyrics when optional search fails; rejected malformed timed text that previously displaced usable results; removed delimiter collisions in playback identity; restricted provider redirects; tightened loopback framing/host/origin checks; isolated browser token storage; added connection backoff; clamped stored preferences; restored unreachable floating panels; reduced unnecessary window ordering; added shutdown cleanup; replaced background NSAppleScript usage with direct Apple Events; removed all public email setup and bundled personal contact values.

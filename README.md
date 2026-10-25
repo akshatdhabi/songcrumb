@@ -8,6 +8,18 @@ Its compact panel sits flush beneath the menu bar, with monospaced type, a brigh
 
 **macOS 14+ · Apple Silicon · SwiftUI + AppKit · No third-party Swift dependencies**
 
+## See it in motion
+
+![Real native Songcrumb overlay scrolling original demo lyrics](docs/media/lyrics-demo.gif)
+
+*Captured from the native app with original Songcrumb preview lyrics. The loop demonstrates line highlighting and scrolling; it is not a live music-service recording.*
+
+<p><img src="docs/media/attached-overlay.png" width="560" alt="Compact native Songcrumb lyrics panel"></p>
+<p><img src="docs/media/appearance.png" width="560" alt="Native appearance settings with attached and floating position, fonts, size, opacity and highlight controls"></p>
+<p><img src="docs/media/music-sources.png" width="560" alt="Opt-in Spotify, Apple Music and YouTube Music connections in native Settings"></p>
+
+*Real native screenshots. Music connections are off in the preview. No commercial lyrics or personal listening data are included.*
+
 ## What it does
 
 - Reads Spotify and Apple Music desktop playback through public Apple Events. Sources are opt-in; it never launches a music player or changes playback.
@@ -17,16 +29,32 @@ Its compact panel sits flush beneath the menu bar, with monospaced type, a brigh
 - Offers typeface, size, highlight, transparency, width, context and timing controls. A nonactivating panel keeps keyboard focus with your work.
 - Slows polling when idle or in Low Power Mode and pauses work during display sleep. M5 battery performance has not been benchmarked.
 
-## Build and run
+## Download and install
 
-Open **Songcrumb.xcodeproj**, select **Songcrumb → My Mac**, and Run. The project targets arm64 with local ad-hoc signing. For a stable Automation identity, configure your own Apple Development team.
+**[Download the Mac preview · DMG](https://github.com/akshatdhabi/songcrumb/releases/download/v1.0.0/Songcrumb-1.0.0-arm64.dmg)** · [ZIP alternative](https://github.com/akshatdhabi/songcrumb/releases/download/v1.0.0/Songcrumb-1.0.0-arm64.zip) · [All release files](https://github.com/akshatdhabi/songcrumb/releases/tag/v1.0.0)
 
-Or use Apple’s Command Line Tools:
+**Apple Silicon · macOS 14+ · No Xcode needed for the compiled download**
+
+1. Download and open the **DMG**.
+2. Drag **Songcrumb → Applications**, then eject the disk image.
+3. Open Songcrumb from Applications. Look for its quotation-mark icon in the menu bar.
+
+The ZIP contains the same compiled app: expand it and drag Songcrumb.app to Applications. The [install guide](docs/INSTALL.txt) also covers first launch, optional YouTube Music pairing, uninstalling and SHA-256 checksums.
+
+**Preview signing:** the app is ad-hoc signed and **not notarized by Apple**. macOS may block a downloaded copy. If you trust this project, use the app-specific **Open Anyway** option in **System Settings → Privacy & Security**, when offered after trying to open it; see [Apple’s guidance](https://support.apple.com/guide/mac-help/mh40616/mac). If that option is unavailable, build the source locally. No step disables Gatekeeper or removes quarantine.
+
+### Prefer to build it yourself?
+
+**Xcode:** open **Songcrumb.xcodeproj**, select **Songcrumb → My Mac**, and Run. For a stable Automation identity, configure your own Apple Development team.
+
+**Command Line Tools:** [download the source](https://github.com/akshatdhabi/songcrumb/archive/refs/tags/v1.0.0.zip), expand it, open Terminal in that folder and run:
 
 ```sh
 ./Scripts/build.sh
 open build/Songcrumb.app
 ```
+
+The source build targets arm64 and uses local ad-hoc signing by default.
 
 On first launch, use **Preview overlay** for original sample text. Then enable the music apps you use in Settings and allow their macOS Automation prompts. Online lookup is already configured with this project’s GitHub URL. **No personal email or account is needed.**
 
@@ -34,7 +62,7 @@ For YouTube Music, load **YouTubeMusicCompanion/** as an unpacked Chromium exten
 
 ## A few practical limits
 
-This is a source/developer release, not a notarized one-click installer. Public distribution of a signed binary needs Developer ID signing and notarization. The app’s use of public APIs does not guarantee layering over every full-screen or system-owned surface.
+The compiled download is a developer preview. A normal Apple-verified installation experience still requires Developer ID signing and notarization. The app’s use of public APIs does not guarantee layering over every full-screen or system-owned surface.
 
 LRCLIB is community supplied. A matching API response does not establish a copyright licence for every lyric, and coverage or timing may be wrong. Use content you have rights to display. A licensed HTTPS backend adapter is included for agreements that support this overlay; details are in [Setup](docs/SETUP.md). No commercial lyrics, cookies, private player APIs or provider keys are bundled.
 

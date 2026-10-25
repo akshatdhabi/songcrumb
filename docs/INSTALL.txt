@@ -1,0 +1,46 @@
+SONGCRUMB — MAC PREVIEW
+macOS 14 or later. Apple Silicon (M1 and newer, including M5). Intel Macs are not supported.
+
+INSTALL THE DMG (no Xcode needed)
+1. Download Songcrumb-1.0.0-arm64.dmg from github.com/akshatdhabi/songcrumb/releases/tag/v1.0.0.
+2. Double-click the DMG. Drag Songcrumb into the Applications shortcut.
+3. Eject the disk image. Open Songcrumb from Applications.
+4. Find the quotation-mark icon in the menu bar. Settings opens on first launch.
+5. Try Preview overlay, then enable Spotify or Apple Music in Music sources.
+   Allow the per-app macOS Automation prompt when you choose to connect it.
+
+ZIP ALTERNATIVE
+Download Songcrumb-1.0.0-arm64.zip, double-click to expand it, and drag Songcrumb.app to Applications.
+The app is the same in both downloads. Do not run multiple copies at once.
+
+BEFORE YOU OPEN THIS PREVIEW
+This is a developer preview, ad-hoc signed and not notarized by Apple. macOS may block a downloaded copy.
+If you trust this project and want to proceed, first try opening Songcrumb, then open
+System Settings > Privacy & Security and use Open Anyway for Songcrumb if macOS offers it.
+Follow Apple's explanation: https://support.apple.com/guide/mac-help/mh40616/mac
+Do not disable Gatekeeper or remove quarantine in Terminal. If the expected approval is unavailable,
+build the source locally with Xcode or Apple's Command Line Tools instead.
+
+No Developer ID certificate or notarization credentials are bundled. Live music-service behavior
+and M5 battery usage still need manual validation. The source and automated checks are public.
+
+YOUTUBE MUSIC (optional)
+Download and expand the separate YouTubeMusicCompanion ZIP. In Chrome, Edge or Brave, open Extensions,
+enable Developer mode, choose Load unpacked and select the YouTubeMusicCompanion folder.
+Enable the companion in Songcrumb's Music sources settings. Copy the pairing token from the app
+into the extension popup. Open or reload music.youtube.com. Safari is not included.
+
+No email or account is needed for automatic lyric lookup. Lyrics coverage, correctness and sync vary.
+Songcrumb does not bundle commercial lyrics or grant rights to third-party lyrics.
+
+VERIFY A DOWNLOAD (optional)
+Download SHA256SUMS.txt. For the DMG, run:
+  shasum -a 256 Songcrumb-1.0.0-arm64.dmg
+Compare the printed hash with the DMG line in SHA256SUMS.txt. For a ZIP, use its filename instead.
+The checksum helps detect transfer corruption;
+it does not replace Developer ID signing or notarization.
+
+UNINSTALL
+Quit Songcrumb from its menu bar menu, then move it from Applications to Trash.
+Remove the browser companion from your browser if you installed it. This leaves local appearance
+preferences and optional lyric overrides in your user Library; see PRIVACY.md for retained data.

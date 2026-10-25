@@ -19,7 +19,7 @@ rules = {
 failures = []
 for name in paths:
     path = root / name
-    if not name or not path.is_file() or path.suffix in {'.icns', '.png'}:
+    if not name or not path.is_file() or path.suffix in {'.icns', '.png', '.gif', '.jpg'}:
         continue
     try:
         text = path.read_text(encoding='utf-8')
