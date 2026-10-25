@@ -8,17 +8,26 @@ Its compact panel sits flush beneath the menu bar, with monospaced type, a brigh
 
 **macOS 14+ · Apple Silicon · SwiftUI + AppKit · No third-party Swift dependencies**
 
+**[↓ Download for Mac · DMG](https://github.com/akshatdhabi/songcrumb/releases/download/v1.0.0/Songcrumb-1.0.0-arm64.dmg)** · [ZIP](https://github.com/akshatdhabi/songcrumb/releases/download/v1.0.0/Songcrumb-1.0.0-arm64.zip) · [Install guide](#download-and-install)
+
+*Developer preview for Apple Silicon. Ad-hoc signed; not notarized by Apple.*
+
 ## See it in motion
 
 ![Real native Songcrumb overlay scrolling original demo lyrics](docs/media/lyrics-demo.gif)
 
 *Captured from the native app with original Songcrumb preview lyrics. The loop demonstrates line highlighting and scrolling; it is not a live music-service recording.*
 
+<details>
+<summary>More native screenshots: overlay, appearance and music connections</summary>
+
 <p><img src="docs/media/attached-overlay.png" width="560" alt="Compact native Songcrumb lyrics panel"></p>
 <p><img src="docs/media/appearance.png" width="560" alt="Native appearance settings with attached and floating position, fonts, size, opacity and highlight controls"></p>
 <p><img src="docs/media/music-sources.png" width="560" alt="Opt-in Spotify, Apple Music and YouTube Music connections in native Settings"></p>
 
 *Real native screenshots. Music connections are off in the preview. No commercial lyrics or personal listening data are included.*
+
+</details>
 
 ## What it does
 

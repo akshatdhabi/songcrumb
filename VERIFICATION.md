@@ -21,6 +21,8 @@ The local arm64 app ZIP passed extraction, signature, architecture, version and 
 
 Documentation media consists of real native screenshots and a GIF encoded from captured original-text preview frames. No commercial lyric text or personal listening metadata appears in the captures.
 
+The [published v1.0.0 Mac preview](https://github.com/akshatdhabi/songcrumb/releases/tag/v1.0.0) was built from commit `3615fff957968adda69a7533fd17543b07521ed3`. Both the [release build and packaging job](https://github.com/akshatdhabi/songcrumb/actions/runs/40176274990) and the [full Xcode verification job](https://github.com/akshatdhabi/songcrumb/actions/runs/40176274995) completed successfully. The prerelease contains the DMG, app ZIP, companion ZIP, INSTALL.txt and SHA256SUMS.txt. It remains ad-hoc signed and unnotarized.
+
 ## Audit fixes included
 
 Retained usable exact plain lyrics when optional search fails; rejected malformed timed text that previously displaced usable results; removed delimiter collisions in playback identity; restricted provider redirects; tightened loopback framing/host/origin checks; isolated browser token storage; added connection backoff; clamped stored preferences; restored unreachable floating panels; reduced unnecessary window ordering; added shutdown cleanup; replaced background NSAppleScript usage with direct Apple Events; removed all public email setup and bundled personal contact values.
