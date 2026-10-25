@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Songcrumb · YouTube Music Companion",
+  "version": "1.0.0",
+  "description": "Send only YouTube Music playback metadata and timing to your paired local Songcrumb app.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1:48537/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": ["https://music.youtube.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }],
+  "action": { "default_title": "Pair Songcrumb", "default_popup": "popup.html" }
+}

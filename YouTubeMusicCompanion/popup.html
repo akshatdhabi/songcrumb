@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Pair Songcrumb</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <div class="mark">❞</div><h1>Songcrumb</h1><p class="tagline">Your music, in your space.</p>
+  <p>Enable YouTube Music in Songcrumb Settings, then paste its pairing token below.</p>
+  <label for="token">Pairing token</label>
+  <input id="token" type="password" autocomplete="off" spellcheck="false" maxlength="64" placeholder="Paste from Songcrumb Settings">
+  <button id="save">Pair this browser</button><button id="retry" class="secondary">Retry connection</button><button id="disconnect" class="secondary">Disconnect</button>
+  <p id="status" role="status">Open music.youtube.com to connect.</p>
+  <p class="privacy">Only song metadata and playback timing go to 127.0.0.1 on this Mac. No lyrics, cookies or audio leave the page.</p>
+  <script src="popup.js"></script>
+</body></html>
