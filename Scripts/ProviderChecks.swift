@@ -1,36 +1,13 @@
 import Foundation
 
-final class FixtureProtocol: URLProtocol, @unchecked Sendable {
-    static let lock = NSLock()
-    static var replies: [(Int, String, [String: String])] = []
-    static var calls: [URLRequest] = []
-    static func reset(_ values: [(Int, String, [String: String])]) {
-        lock.lock(); defer { lock.unlock() }
-        replies = values; calls = []
-    }
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-    override func startLoading() {
-        Self.lock.lock()
-        Self.calls.append(request)
-        let item = Self.replies.isEmpty ? (500, "{}", [:]) : Self.replies.removeFirst()
-        Self.lock.unlock()
-        let response = HTTPURLResponse(url: request.url!, statusCode: item.0, httpVersion: "HTTP/1.1", headerFields: ["Content-Type":"application/json"].merging(item.2) { _, new in new })!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data(item.1.utf8))
-        client?.urlProtocolDidFinishLoading(self)
-    }
-    override func stopLoading() {}
-}
-
 @main struct ProviderChecks {
     static func expect(_ condition: Bool, _ message: String) throws {
         if !condition { throw LyricsService.Failure.message(message) }
     }
-    static func service() -> LyricsService {
+    static func service(clock: FixtureClock? = nil) -> LyricsService {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [FixtureProtocol.self]
-        return LyricsService(session: URLSession(configuration: config))
+        return LyricsService(session: URLSession(configuration: config), clock: { clock?.now() ?? Date() }, jitter: { 0 })
     }
     static func main() async {
         do {
@@ -63,6 +40,37 @@ final class FixtureProtocol: URLProtocol, @unchecked Sendable {
             do { _ = try await busy.fetch(track, preferences: prefs) } catch {}
             try expect(FixtureProtocol.calls.count == 1, "Retry-After must prevent another HTTP request")
 
+            let clock = FixtureClock()
+            FixtureProtocol.reset([(503,"{}",["Retry-After":"2"]), (200,correct,[:])])
+            let recovering = service(clock: clock)
+            do { _ = try await recovering.fetch(track, preferences: prefs); throw LyricsService.Failure.message("503 unexpectedly succeeded") }
+            catch let error as LyricsService.Failure { try expect(error.retryDate != nil, "503 must provide an automatic retry date") }
+            await recovering.clear()
+            do { _ = try await recovering.fetch(track, preferences: prefs) } catch {}
+            try expect(FixtureProtocol.calls.count == 1, "Refresh/cache clear must not bypass backoff")
+            clock.advance(3)
+            let recoveredAfterWait = try await recovering.fetch(track, preferences: prefs)
+            try expect(recoveredAfterWait.synced && FixtureProtocol.calls.count == 2, "Lookup must recover after server cooldown")
+
+            FixtureProtocol.reset([(429,"{}",["Retry-After":"60"]), (200, String(plain.dropLast()) + #", "licenseConfirmed":true,"attribution":"Fixture publisher"}"#, [:])])
+            let isolated = service()
+            do { _ = try await isolated.fetch(track, preferences: prefs) } catch {}
+            var alternate = prefs; alternate.provider = "licensed"; alternate.licensedEndpoint = "https://provider.test/lyrics"
+            _ = try await isolated.fetch(track, preferences: alternate)
+            try expect(FixtureProtocol.calls.count == 2, "One provider's rate limit must not block another origin")
+
+            FixtureProtocol.reset([(200,correct,[:]), (200,correct,[:])])
+            let selective = service()
+            _ = try await selective.fetch(track, preferences: prefs)
+            var other = track; other.trackID = "other-recording"
+            _ = try await selective.fetch(other, preferences: prefs)
+            await selective.invalidate(other, preferences: prefs)
+            _ = try await selective.fetch(track, preferences: prefs)
+            try expect(FixtureProtocol.calls.count == 2, "Refreshing one recording must preserve other cached songs")
+            var displayPrefs = Preferences(); displayPrefs.attachedDisplayID = "display-fixture"
+            let roundtrip = try JSONDecoder().decode(Preferences.self, from: JSONEncoder().encode(displayPrefs))
+            try expect(roundtrip.attachedDisplayID == "display-fixture", "Monitor choice must persist")
+
             FixtureProtocol.reset([(200,correct,[:])])
             let automatic = try await service().fetch(track, preferences:Preferences())
             try expect(automatic.synced, "Public build must fetch without listener contact setup")
@@ -94,7 +102,7 @@ final class FixtureProtocol: URLProtocol, @unchecked Sendable {
             var unsafe = Preferences(); unsafe.width = 1e100; unsafe.fontSize = -.infinity; unsafe.source = "unknown"
             let safe = unsafe.sanitized()
             try expect(safe.width == 1000 && safe.fontSize == 18 && safe.source == "auto", "Persisted appearance must be clamped")
-            print("Provider/preferences: 9 scenario groups passed, including degraded search, malformed timings, licence/cache policy and saved settings. No external requests.")
+            print("Provider/preferences: 13 scenario groups passed, including degraded search, malformed timings, licence/cache policy and saved settings. No external requests.")
         } catch {
             fputs("Provider check failed: \(error)\n", stderr); exit(1)
         }

@@ -5,6 +5,9 @@ import Combine
 final class LyricsPanel: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+    // AppKit's default constraint reserves the menu bar above ordinary windows.
+    // This borderless panel supplies its own display bounds and safe text inset.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
 }
 
 @MainActor final class OverlayController: NSObject, NSWindowDelegate {
@@ -12,6 +15,7 @@ final class LyricsPanel: NSPanel {
     let panel: LyricsPanel
     private var subscription: AnyCancellable?
     private var screenObserver: NSObjectProtocol?
+    private var spaceObserver: NSObjectProtocol?
     private var wasAttached: Bool?
     private var placingWindow = false
     init(model: AppModel) {
@@ -27,11 +31,15 @@ final class LyricsPanel: NSPanel {
         panel.isReleasedWhenClosed = false
         panel.delegate = self
         panel.contentView = NSHostingView(rootView: OverlayView(model: model))
-        if let stored = UserDefaults.standard.string(forKey: "overlayFrame") {
-            let frame = NSRectFromString(stored)
-            if frame.origin.x.isFinite, frame.origin.y.isFinite { panel.setFrameOrigin(frame.origin) }
-            else { resetPosition() }
-        } else { resetPosition() }
+        // Floating coordinates are separate from the selected attached monitor.
+        // Never replace a saved display choice with the pointer's screen at launch.
+        if !model.preferences.topAttached {
+            if let stored = UserDefaults.standard.string(forKey: "overlayFrame") {
+                let frame = NSRectFromString(stored)
+                if frame.origin.x.isFinite, frame.origin.y.isFinite { panel.setFrameOrigin(frame.origin) }
+                else { resetPosition() }
+            } else { resetPosition() }
+        }
         // A removed external display must not leave a same-sized saved window off-screen.
         fitToScreen()
         model.panelChanged = { [weak self] in self?.refresh() }
@@ -41,7 +49,14 @@ final class LyricsPanel: NSPanel {
         screenObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.refresh(); self?.fitToScreen() }
         }
+        spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.refresh() }
+        }
         refresh()
+    }
+    deinit {
+        if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
+        if let spaceObserver { NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver) }
     }
     func refresh() {
         let attached = model.preferences.topAttached
@@ -57,33 +72,45 @@ final class LyricsPanel: NSPanel {
         panel.isMovableByWindowBackground = model.editing && !attached
         let height: Double
         if attached {
-            height = model.preferences.contextLines ? max(150, model.preferences.fontSize * 4 + 64) : max(120, model.preferences.fontSize * 2 + 64)
+            height = model.preferences.contextLines ? max(136, model.preferences.fontSize * 4 + 52) : max(104, model.preferences.fontSize * 2 + 52)
         } else {
             height = model.preferences.contextLines ? max(280, model.preferences.fontSize * 9.5) : max(200, model.preferences.fontSize * 6)
         }
         let screen = attached ? attachedScreen() : (panel.screen ?? NSScreen.main)
         let size = NSSize(width: min(model.preferences.width, (screen?.visibleFrame.width ?? 1200) - 24), height: min(height, (screen?.visibleFrame.height ?? 800) - 24))
         if attached, let screen {
-            let frame = OverlayGeometry.attachedFrame(in: screen.visibleFrame, requestedSize: size)
+            let layout = OverlayGeometry.attachedLayout(screen: screen.frame, visible: screen.visibleFrame,
+                safeTop: screen.safeAreaInsets.top,
+                menuBarHeight: max(NSStatusBar.system.thickness, screen.safeAreaInsets.top > 0 ? screen.safeAreaInsets.top + 1 : 0),
+                requestedSize: size)
+            if model.overlayTopInset != layout.topInset { model.overlayTopInset = layout.topInset }
+            let frame = layout.frame
             if panel.frame != frame {
                 placingWindow = true; panel.setFrame(frame, display: true); placingWindow = false
             }
-        } else if panel.frame.size != size { panel.setContentSize(size); fitToScreen() }
+        } else {
+            if model.overlayTopInset != 0 { model.overlayTopInset = 0 }
+            if panel.frame.size != size { panel.setContentSize(size); fitToScreen() }
+        }
         let visible = !model.suspended && model.preferences.visible &&
             (model.editing || model.demo || (model.playback != nil && (!model.preferences.hidePaused || model.playback?.playing == true)))
         if visible && !panel.isVisible { panel.orderFrontRegardless() }
         else if !visible && panel.isVisible { panel.orderOut(nil) }
     }
     private func attachedScreen() -> NSScreen? {
-        let saved = UserDefaults.standard.object(forKey: "attachedDisplay") as? NSNumber
-        return NSScreen.screens.first { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber) == saved }
-            ?? NSScreen.main ?? NSScreen.screens.first
+        if model.preferences.attachedDisplayID == nil,
+           let saved = UserDefaults.standard.object(forKey: "attachedDisplay") as? NSNumber,
+           let legacy = NSScreen.screens.first(where: { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber) == saved }) {
+            model.preferences.attachedDisplayID = DisplayCatalog.identifier(for: legacy)
+            UserDefaults.standard.removeObject(forKey: "attachedDisplay")
+        }
+        return DisplayCatalog.screen(preferred: model.preferences.attachedDisplayID)
     }
     func resetPosition() {
         let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
         guard let screen else { return }
         if model.preferences.topAttached {
-            UserDefaults.standard.set(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")], forKey: "attachedDisplay")
+            model.preferences.attachedDisplayID = DisplayCatalog.identifier(for: screen)
             refresh()
         } else {
             let frame = screen.visibleFrame
@@ -164,12 +191,14 @@ struct OverlayView: View {
                         }.scrollIndicators(.hidden)
                     }.padding(.horizontal, 12)
                 }
-                Text(doc.attribution).font(.system(size: 9)).foregroundStyle(.white.opacity(0.4)).lineLimit(2)
+                Text(doc.attribution).font(.system(size: model.preferences.topAttached ? 8 : 9)).foregroundStyle(.white.opacity(0.4)).lineLimit(2)
             } else {
-                emptyState(icon: model.loading ? "ellipsis" : "text.quote", title: model.loading ? "Finding the words…" : "A little room for music.", subtitle: model.lyricsStatus)
+                emptyState(icon: model.retryAt != nil ? "clock" : (model.loading ? "ellipsis" : "text.quote"),
+                    title: model.retryAt != nil ? "Waiting for the words…" : (model.loading ? "Finding the words…" : "A little room for music."), subtitle: model.lyricsStatus)
             }
         }
         .padding(model.preferences.topAttached ? 12 : 22)
+        .padding(.top, model.overlayTopInset)
         .foregroundStyle(.white)
         .opacity(model.preferences.textOpacity)
         .background {

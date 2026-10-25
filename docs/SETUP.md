@@ -14,7 +14,7 @@ For your own music:
 2. Start a song in that source. Allow the per-app Automation prompt for Spotify or Music when it appears.
 3. In **Lyrics & timing**, automatic internet lookup is already selected. No account or email is needed. After connecting a player, every song change looks up the right recording automatically; no local files or manual song searches are needed.
 4. Use **Appearance** for font size, width, color, text opacity and backdrop opacity. Set backdrop opacity to zero for just floating text.
-5. The default panel stays flush beneath the menu bar, with square top corners, rounded bottom corners and monospaced lyrics. **Unlock overlay controls** lets you scroll plain text or change settings. Choose **Floating** to drag the overlay anywhere; its position is saved separately. Lock it to restore click-through behavior. **Attach to this screen** moves attached mode to the display containing the pointer.
+5. The default panel stays flush beneath the menu bar, with square top corners, rounded bottom corners and monospaced lyrics. **Unlock overlay controls** lets you scroll plain text or change settings. Choose **Floating** to drag the overlay anywhere; its position is saved separately. Lock it to restore click-through behavior. **Your overlay → Display** chooses a connected monitor by name. The menu bar has the same picker. The choice is saved by display UUID, falls back to the main screen while disconnected, and returns on reconnect. **Use pointer’s display** is a quick alternative.
 
 Closing Settings leaves Songcrumb running in the menu bar. Choose **Quit** there to exit. Music connections are off by default. Automatic internet lookup is preselected, but requests only start after you connect a source.
 
@@ -77,7 +77,7 @@ On every recording change, Songcrumb:
 3. Removes only presentation labels such as “Official Music Video” / “Official Audio”. It retains live, remix, acoustic and remaster labels, requires the artist names to match, and rejects duration differences above two seconds. Artist separator formatting can differ.
 4. Ranks compatible recordings using duration and album, prefers synced lyrics, and caches the selected result for the session. It never blindly uses the first search hit or invents timing.
 
-These checks reduce wrong-version matches; metadata alone cannot prove that a community-submitted lyric is correct. No confident match produces an honest unavailable state, and a ten-minute negative cache avoids repeated misses. **Fetch again** clears that cache and retries. Network errors and provider backoff are visible. If the source has no timed text, plain lyrics appear as unsynced text.
+These checks reduce wrong-version matches; metadata alone cannot prove that a community-submitted lyric is correct. No confident match produces an honest unavailable state, and a ten-minute negative cache avoids repeated misses. **Fetch again** clears that cache and retries. Temporary network/429/500/502/503/504 failures schedule one cancellable automatic retry for the current recording, honoring Retry-After with positive jitter and increasing delays. Cooldowns are per HTTPS origin and survive Refresh; other recordings remain cached. Changing tracks, sleep, preview and quit cancel the pending retry. Status stays in the menu/settings or a calm waiting overlay, without alerts. If the source has no timed text, plain lyrics appear as unsynced text.
 
 Lookup sends song metadata to LRCLIB. The app uses the documented API, identifies itself, serializes requests and honors backoff. Public access does not establish display rights for every community submission. Use content where you have the necessary rights; a commercial catalogue needs the relevant agreement. See the [provider's API documentation](https://lrclib.net/docs).
 
@@ -111,7 +111,7 @@ Return 404 for no authorized match, 429 with `Retry-After` for backoff, or 503 f
 
 ## Overlay, permissions and battery
 
-The overlay uses public `NSPanel` / `NSWindow` APIs: a non-activating borderless panel, floating level, join-all-Spaces and full-screen auxiliary behavior, with mouse events ignored while locked. It cannot become key or main. Attached mode recalculates its frame from the chosen display’s visible frame, directly below the menu bar. This keeps lyric text out of the notch region. Floating mode restores its own saved position and clamps back to a connected display after screen changes. Line transitions respect Reduce Motion.
+The overlay uses public `NSPanel` / `NSWindow` APIs: a non-activating borderless panel, floating level, join-all-Spaces and full-screen auxiliary behavior, with mouse events ignored while locked. It cannot become key or main. Attached mode pins its backdrop to the chosen display’s physical top edge. Menu-bar and notch clearance is reserved inside the panel, so a hidden menu bar cannot leave an external gap or make lyric text jump. The panel remains below system menu-bar windows in window level. Floating mode restores its own saved position and clamps back to a connected display after screen changes. Line transitions respect Reduce Motion.
 
 macOS full-screen apps, Stage Manager, other floating windows and system-owned UI can constrain layering. Songcrumb does not promise to cover every system surface, the lock screen, permission dialogs or protected content.
 

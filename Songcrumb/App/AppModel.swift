@@ -4,7 +4,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor final class AppModel: ObservableObject {
-    @Published var preferences = Preferences.load() {
+    @Published var preferences: Preferences {
         didSet {
             preferences.save()
             if !preferences.visible { editing = false }
@@ -14,6 +14,9 @@ import UniformTypeIdentifiers
             }
         }
     }
+    @Published var displays = DisplayCatalog.connected
+    @Published var overlayTopInset: CGFloat = 0
+    @Published var retryAt: Date?
     @Published var playback: Playback?
     @Published var lyrics: LyricsDocument?
     @Published var lyricsStatus = "Connect your music for automatic online lyrics."
@@ -28,7 +31,7 @@ import UniformTypeIdentifiers
     @Published var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
     @Published var token: String = UserDefaults.standard.string(forKey: "browserToken") ?? ""
     private let desktop = DesktopPlayer()
-    private let service = LyricsService()
+    private let service: LyricsService
     private let bridge = BrowserBridge()
     private var browserPlayback: Playback?
     private var desktopPlayback: [Playback] = []
@@ -43,7 +46,9 @@ import UniformTypeIdentifiers
     var panelChanged: (() -> Void)?
     var showSettings: (() -> Void)?
 
-    init() {
+    init(preferences: Preferences = Preferences.load(), service: LyricsService = LyricsService(), startServices: Bool = true) {
+        self.preferences = preferences
+        self.service = service
         if token.isEmpty { rotateToken() }
         bridge.onPlayback = { [weak self] track in
             Task { @MainActor in
@@ -53,6 +58,9 @@ import UniformTypeIdentifiers
             }
         }
         bridge.onStatus = { [weak self] status in Task { @MainActor in self?.browserStatus = status } }
+        observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.displays = DisplayCatalog.connected }
+        })
         let center = NSWorkspace.shared.notificationCenter
         observers.append(center.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.sleep() }
@@ -66,8 +74,7 @@ import UniformTypeIdentifiers
         observers.append(center.addObserver(forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.wake() }
         })
-        startPolling()
-        updateBridge()
+        if startServices { startPolling(); updateBridge() }
     }
     private func startPolling() {
         pollTask?.cancel()
@@ -83,7 +90,7 @@ import UniformTypeIdentifiers
     private func sleep() {
         suspended = true; browserPlayback = nil; desktopPlayback = []; playback = nil
         pollTask?.cancel(); pollTask = nil
-        lyricTask?.cancel(); requestID = UUID(); bridge.stop(); panelChanged?()
+        lyricTask?.cancel(); requestID = UUID(); retryAt = nil; bridge.stop(); panelChanged?()
     }
     private func wake() {
         suspended = false; updateBridge()
@@ -155,10 +162,11 @@ import UniformTypeIdentifiers
         }
         panelChanged?()
     }
-    func loadLyrics() {
+    func loadLyrics(keepingCurrent: Bool = false, refreshing: Bool = false) {
         let previous = lyricTask
         previous?.cancel(); requestID = UUID()
-        loading = false; lyrics = nil
+        loading = false; retryAt = nil
+        if !keepingCurrent { lyrics = nil }
         guard let track = playback else { lyricsStatus = "Play a song in a connected source."; return }
         if demo { installPreview(); return }
         if let data = localLyrics(track) {
@@ -172,15 +180,30 @@ import UniformTypeIdentifiers
             await previous?.value
             guard !Task.isCancelled else { return }
             guard let self else { return }
-            do {
-                let doc = try await service.fetch(track, preferences: prefs)
-                guard !Task.isCancelled, requestID == id, playback?.key == track.key else { return }
-                lyrics = doc; lyricsStatus = doc.instrumental ? "Instrumental" : (doc.synced ? "Line synced" : "Unsynced · scroll manually")
-            } catch {
-                guard !Task.isCancelled, requestID == id else { return }
-                lyricsStatus = error.localizedDescription
+            if refreshing { await service.invalidate(track, preferences: prefs) }
+            while !Task.isCancelled, requestID == id, playback?.key == track.key, !suspended {
+                do {
+                    let doc = try await service.fetch(track, preferences: prefs)
+                    guard !Task.isCancelled, requestID == id, playback?.key == track.key else { return }
+                    lyrics = doc; lyricsStatus = doc.instrumental ? "Instrumental" : (doc.synced ? "Line synced" : "Unsynced · scroll manually")
+                    retryAt = nil; loading = false; return
+                } catch {
+                    guard !Task.isCancelled, requestID == id else { return }
+                    lyricsStatus = error.localizedDescription
+                    loading = false
+                    guard let failure = error as? LyricsService.Failure, let date = failure.retryDate else { retryAt = nil; return }
+                    retryAt = date
+                    // One cancellable retry belongs to this recording. Track/source changes,
+                    // sleep, preview and quit cancel it; no alert or repeated user action.
+                    do {
+                        while date > Date() {
+                            try await Task.sleep(for: .seconds(min(3600, max(0.1, date.timeIntervalSinceNow))))
+                        }
+                    } catch { return }
+                    guard !Task.isCancelled, requestID == id else { return }
+                    retryAt = nil; loading = true
+                }
             }
-            loading = false
         }
     }
     private func localURL(_ track: Playback, legacy: Bool = false) -> URL {
@@ -223,9 +246,9 @@ import UniformTypeIdentifiers
             loadLyrics()
         }
     }
-    func clearSessionCache() { Task { await service.clear(); loadLyrics() } }
+    func clearSessionCache() { loadLyrics(keepingCurrent: true, refreshing: true) }
     func toggleDemo() {
-        demo.toggle(); lyricTask?.cancel(); requestID = UUID()
+        demo.toggle(); lyricTask?.cancel(); requestID = UUID(); retryAt = nil
         if demo {
             demoStart = ProcessInfo.processInfo.systemUptime
             playback = Playback(source: .demo, trackID: "preview", title: "A little room for music", artist: "Songcrumb · original preview", album: "", duration: 30, position: 0, playing: true)
@@ -237,7 +260,7 @@ import UniformTypeIdentifiers
     }
     func shutdown() {
         pollTask?.cancel(); lyricTask?.cancel(); bridge.stop()
-        observers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
+        observers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0); NotificationCenter.default.removeObserver($0) }
         observers.removeAll()
     }
     private func installPreview() {

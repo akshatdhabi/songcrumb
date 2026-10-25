@@ -22,7 +22,8 @@ struct CoreChecks {
         try testSafeIdentityAndPolicy()
         try testBridgeBoundaries()
         try testAttachedOverlayGeometry()
-        print("Core: 11 scenario groups passed, including attached display geometry, identity, HTTP boundaries and redirect policy.")
+        try testLyricsRetryPolicy()
+        print("Core: 12 scenario groups passed, including attached display geometry, identity, HTTP boundaries and redirect policy.")
     }
     func testAttachedOverlayGeometry() throws {
         // A notched display: visibleFrame starts below the menu bar.
@@ -36,6 +37,29 @@ struct CoreChecks {
         try isTrue(external.contains(resized))
         try equal(resized.maxY, external.maxY)
         try equal(resized.midX, external.midX)
+        let screen = CGRect(x: 0, y: 0, width: 1470, height: 956)
+        let full = OverlayGeometry.attachedLayout(screen: screen, visible: visible, safeTop: 44,
+            menuBarHeight: 24, requestedSize: CGSize(width: 560, height: 136))
+        try equal(full.frame.maxY, screen.maxY)
+        try equal(full.topInset, 44)
+        try equal(full.frame.height - full.topInset, 136)
+        let normal = OverlayGeometry.attachedLayout(screen: screen, visible: visible, safeTop: 44,
+            menuBarHeight: 44, requestedSize: CGSize(width: 560, height: 136))
+        try equal(normal.frame.maxY, screen.maxY)
+        try equal(normal.topInset, 44)
+        let secondary = OverlayGeometry.attachedLayout(screen: external, visible: external.insetBy(dx: 0, dy: 24), safeTop: 0,
+            menuBarHeight: 24, requestedSize: CGSize(width: 560, height: 136))
+        try equal(secondary.frame.maxY, external.maxY)
+        try equal(secondary.frame.midX, external.midX)
+        try equal(secondary.topInset, 24)
+    }
+    func testLyricsRetryPolicy() throws {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        try equal(LyricsRetryPolicy.delay(header: "60", status: 429, attempt: 1, now: now, jitter: 0.2), 72)
+        try equal(LyricsRetryPolicy.delay(header: "Tue, 14 Nov 2023 22:14:20 GMT", status: 503, attempt: 1, now: now, jitter: 0), 60)
+        try equal(LyricsRetryPolicy.delay(header: "nan", status: 503, attempt: 2, now: now, jitter: .nan), 4)
+        try equal(LyricsRetryPolicy.delay(header: "-2", status: 429, attempt: 20, now: now, jitter: 0), 120)
+        try equal(LyricsRetryPolicy.delay(header: "86400", status: 429, attempt: 1, now: now, jitter: 0), 86400)
     }
     func testRepeatedTimestampsOffsetAndSeek() throws {
         let doc = LRCParser.parse("[offset:+500]\n[00:02.5][00:08.050]Hello\n[00:04.123]World\n[00:05.00]\n[ar:Artist]", attribution: "Test")

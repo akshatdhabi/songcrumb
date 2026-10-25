@@ -28,7 +28,7 @@ import SwiftUI
     }
     func openSettings() {
         if settings == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 690, height: 650),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 820, height: 700),
                                   styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             window.title = "Songcrumb Settings"
             window.isReleasedWhenClosed = false

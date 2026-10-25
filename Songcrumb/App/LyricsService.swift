@@ -12,10 +12,15 @@ final class LyricsRedirectPolicy: NSObject, URLSessionTaskDelegate, @unchecked S
 actor LyricsService {
     private var cache: [String: LyricsDocument] = [:]
     private var misses: [String: Date] = [:]
-    private var blockedUntil = Date.distantPast
+    private struct Backoff { let until: Date; let attempt: Int; let status: Int? }
+    private var backoffs: [String: Backoff] = [:]
+    private let clock: @Sendable () -> Date
+    private let jitter: @Sendable () -> Double
     private var lastRequest = Date.distantPast
     private let session: URLSession
-    init(session: URLSession? = nil) {
+    init(session: URLSession? = nil, clock: @escaping @Sendable () -> Date = { Date() },
+         jitter: @escaping @Sendable () -> Double = { Double.random(in: 0...0.2) }) {
+        self.clock = clock; self.jitter = jitter
         if let session { self.session = session; return }
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 12
@@ -25,16 +30,33 @@ actor LyricsService {
     }
     enum Failure: LocalizedError {
         case message(String)
-        var errorDescription: String? { if case let .message(s) = self { return s }; return nil }
+        case temporary(until: Date, status: Int?)
+        var retryDate: Date? { if case let .temporary(until, _) = self { return until }; return nil }
+        var errorDescription: String? {
+            switch self {
+            case .message(let value): return value
+            case .temporary(let until, let status):
+                let reason = status == 429 ? "Lyrics service asked for a short pause." : "Lyrics are taking a moment."
+                return "\(reason) Trying again at \(until.formatted(date: .omitted, time: .standard))."
+            }
+        }
     }
     func clear() { cache.removeAll(); misses.removeAll() }
+    private func key(_ track: Playback, preferences: Preferences) -> String {
+        [preferences.provider, preferences.licensedEndpoint, AppIdentity.projectURL.absoluteString, track.key]
+            .map { "\($0.utf8.count):\($0)" }.joined()
+    }
+    func invalidate(_ track: Playback, preferences: Preferences) {
+        let value = key(track, preferences: preferences)
+        cache[value] = nil; misses[value] = nil
+        // A refresh never overrides server backoff or erases other songs' lyrics.
+    }
     func fetch(_ track: Playback, preferences: Preferences) async throws -> LyricsDocument {
         guard preferences.provider != "local" else { throw Failure.message("Automatic internet lookup is off. Choose LRCLIB or your licensed provider in Lyrics settings.") }
         guard ["lrclib", "licensed"].contains(preferences.provider) else { throw Failure.message("Choose a supported lyrics provider.") }
-        let clientIdentity = AppIdentity.projectURL.absoluteString
-        let cacheKey = [preferences.provider, preferences.licensedEndpoint, clientIdentity, track.key].map { "\($0.utf8.count):\($0)" }.joined()
+        let cacheKey = key(track, preferences: preferences)
         if let cached = cache[cacheKey] { return cached }
-        if let until = misses[cacheKey], until > Date() {
+        if let until = misses[cacheKey], until > clock() {
             throw Failure.message("No confident online match was found recently. Reload to try again.")
         }
         guard (1...3600).contains(track.duration), !track.artist.isEmpty else {
@@ -73,7 +95,7 @@ actor LyricsService {
         let synced = valid.filter(\.hasUsableSyncedLyrics)
         guard let record = RecordingMatcher.best(in: synced.isEmpty ? valid : synced, for: track) else {
             if misses.count >= 100 { misses.removeAll() }
-            misses[cacheKey] = Date().addingTimeInterval(600)
+            misses[cacheKey] = clock().addingTimeInterval(600)
             throw Failure.message("No confident online lyrics match for this recording. Songcrumb will try automatically when the song changes; use Reload to check again.")
         }
         if !community {
@@ -90,14 +112,15 @@ actor LyricsService {
         return doc
     }
     private func request(_ base: String, query: [URLQueryItem]) async throws -> Data? {
-        guard blockedUntil <= Date() else {
-            throw Failure.message("Provider asked us to wait. Retry after \(blockedUntil.formatted(date: .omitted, time: .shortened)).")
-        }
         guard var url = URLComponents(string: base), url.scheme == "https", url.host != nil,
               url.user == nil, url.password == nil else { throw Failure.message("The lyrics endpoint must be a valid HTTPS URL.") }
         let suppliedKeys = Set(query.map(\.name))
         url.queryItems = (url.queryItems ?? []).filter { !suppliedKeys.contains($0.name) } + query
         guard let endpoint = url.url else { throw Failure.message("Invalid lyrics provider URL.") }
+        let origin = "\(endpoint.scheme ?? "")://\(endpoint.host?.lowercased() ?? ""):\(endpoint.port ?? 443)"
+        if let backoff = backoffs[origin], backoff.until > clock() {
+            throw Failure.temporary(until: backoff.until, status: backoff.status)
+        }
         let delay = 0.4 - Date().timeIntervalSince(lastRequest)
         if delay > 0 { try await Task.sleep(for: .seconds(delay)) }
         try Task.checkCancellation()
@@ -105,27 +128,49 @@ actor LyricsService {
         var request = URLRequest(url: endpoint)
         request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        let (bytes, response) = try await session.bytes(for: request)
-        guard let http = response as? HTTPURLResponse else { throw Failure.message("Invalid provider response.") }
-        if http.statusCode == 429 || http.statusCode == 503 {
-            let header = http.value(forHTTPHeaderField: "Retry-After") ?? "60"
-            let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.timeZone = TimeZone(secondsFromGMT: 0); formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
-            let seconds = Double(header) ?? formatter.date(from: header)?.timeIntervalSinceNow ?? 60
-            blockedUntil = Date().addingTimeInterval(max(1, seconds))
-            throw Failure.message("Lyrics provider is busy. Retry later.")
+        let bytes: URLSession.AsyncBytes
+        let response: URLResponse
+        do { (bytes, response) = try await session.bytes(for: request) }
+        catch {
+            try Task.checkCancellation()
+            if let error = error as? URLError,
+               [.timedOut, .notConnectedToInternet, .networkConnectionLost, .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed].contains(error.code) {
+                throw temporaryFailure(origin: origin, status: nil, header: nil)
+            }
+            throw error
         }
-        if http.statusCode == 404 { return nil }
+        guard let http = response as? HTTPURLResponse else { throw Failure.message("Invalid provider response.") }
+        if [429, 500, 502, 503, 504].contains(http.statusCode) {
+            throw temporaryFailure(origin: origin, status: http.statusCode, header: http.value(forHTTPHeaderField: "Retry-After"))
+        }
+        if http.statusCode == 404 { backoffs[origin] = nil; return nil }
         guard http.statusCode == 200 else { throw Failure.message("Lyrics provider returned HTTP \(http.statusCode).") }
         guard http.value(forHTTPHeaderField: "Content-Type")?.lowercased().contains("json") == true else {
             throw Failure.message("Provider did not return JSON.")
         }
         var data = Data()
-        for try await byte in bytes {
-            guard data.count < 512_000 else { throw Failure.message("Lyrics response exceeded the size limit.") }
-            data.append(byte)
+        do {
+            for try await byte in bytes {
+                guard data.count < 512_000 else { throw Failure.message("Lyrics response exceeded the size limit.") }
+                data.append(byte)
+            }
+        } catch {
+            try Task.checkCancellation()
+            if let error = error as? URLError,
+               [.timedOut, .networkConnectionLost, .notConnectedToInternet].contains(error.code) {
+                throw temporaryFailure(origin: origin, status: nil, header: nil)
+            }
+            throw error
         }
         try Task.checkCancellation()
+        backoffs[origin] = nil
         return data
+    }
+    private func temporaryFailure(origin: String, status: Int?, header: String?) -> Failure {
+        let attempt = (backoffs[origin]?.attempt ?? 0) + 1
+        let delay = LyricsRetryPolicy.delay(header: header, status: status, attempt: attempt, now: clock(), jitter: jitter())
+        let until = clock().addingTimeInterval(delay)
+        backoffs[origin] = Backoff(until: until, attempt: attempt, status: status)
+        return .temporary(until: until, status: status)
     }
 }

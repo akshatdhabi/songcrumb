@@ -8,14 +8,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/akshatdhabi/songcrumb/releases/download/v1.0.0/Songcrumb-1.0.0-arm64.dmg"><strong>Download for Mac ↓</strong></a>
+  <a href="https://github.com/akshatdhabi/songcrumb/releases/download/v1.1.0/Songcrumb-1.1.0-arm64.dmg"><strong>Download for Mac ↓</strong></a>
   &nbsp; · &nbsp;
-  <a href="https://github.com/akshatdhabi/songcrumb/releases/download/v1.0.0/Songcrumb-1.0.0-arm64.zip">ZIP</a>
+  <a href="https://github.com/akshatdhabi/songcrumb/releases/download/v1.1.0/Songcrumb-1.1.0-arm64.zip">ZIP</a>
   &nbsp; · &nbsp;
   <a href="docs/SETUP.md">Setup guide</a>
 </p>
 
-<p align="center"><sub>macOS 14+ · Apple Silicon, including M5 · v1 developer preview · MIT</sub></p>
+<p align="center"><sub>macOS 14+ · Apple Silicon, including M5 · v1.1 developer preview · MIT</sub></p>
 
 <p align="center">
   <img src="docs/media/desktop-demo.gif" width="100%" alt="Illustrated Mac desktop with Songcrumb attached beneath the menu bar, smoothly scrolling and highlighting original demo lyrics.">
@@ -26,9 +26,9 @@
 
 Songcrumb finds lyrics online and keeps a few lines in view while you work. The current line glows; the rest fades into the background.
 
-- **Settle it in.** Attach beneath the menu bar or float anywhere. Lock the overlay to let clicks pass through, with keyboard focus staying on your work.
+- **Settle it in.** Attach beneath the menu bar or float anywhere. Choose its monitor, including in full screen. Lock it to let clicks pass through without taking focus.
 - **Make it yours.** Adjust the typeface, size, highlight, transparency and width.
-- **Follow the song.** Lyrics scroll to available timestamps. Plain lyrics remain clearly unsynced; missing lyrics get a simple status.
+- **Follow the song.** Lyrics scroll to available timestamps. Plain lyrics remain clearly unsynced; temporary server failures retry quietly.
 
 | Your music | Connection |
 | :--- | :--- |
@@ -38,7 +38,7 @@ Songcrumb finds lyrics online and keeps a few lines in view while you work. The 
 
 ## Make room for music
 
-1. **[Download the DMG](https://github.com/akshatdhabi/songcrumb/releases/download/v1.0.0/Songcrumb-1.0.0-arm64.dmg)** and drag Songcrumb into Applications. No Xcode needed. Prefer a ZIP? Expand it and move the app there instead.
+1. **[Download the DMG](https://github.com/akshatdhabi/songcrumb/releases/download/v1.1.0/Songcrumb-1.1.0-arm64.dmg)** and drag Songcrumb into Applications. No Xcode needed. Prefer a ZIP? Expand it and move the app there instead.
 2. **Open Songcrumb.** Find its quotation-mark icon in the menu bar. Try **Preview overlay** to see it in action.
 3. **Connect your player** in Settings and allow its macOS Automation prompt. Lyrics lookup is already configured. No account or email needed.
 

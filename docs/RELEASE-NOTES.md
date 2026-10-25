@@ -1,3 +1,10 @@
+## New in 1.1.0
+
+- Pick your monitor in the menu or **Settings → Your overlay → Display**. The choice survives restarts; disconnecting a monitor uses the main screen until it returns.
+- Attached mode reaches the physical top edge in full screen, with a stable safe area for the menu bar and camera notch.
+- Lyrics-server pauses recover automatically. Requests honor Retry-After and add jitter/backoff; refreshing keeps other songs cached and never bypasses a server cooldown.
+- Redesigned settings with a sidebar, grouped controls and live typography preview; a smaller attached panel and calmer waiting state.
+
 Songcrumb keeps the words close: a native macOS lyrics overlay, attached beneath the menu bar or floating wherever you like.
 
 ## Install without Xcode
@@ -18,6 +25,6 @@ Download the **DMG**, open it, and drag **Songcrumb → Applications**. Open the
 
 ## Known limits
 
-Automated native, provider and bridge checks pass; live Spotify/Music/YouTube Music, permission behavior, physical display combinations and M5 energy measurements still require manual validation. Lyrics coverage and rights vary; no commercial lyrics are bundled. This is line sync, not word-level karaoke. Intel and Safari are not supported by this preview.
+Automated native, provider and bridge checks pass; live Spotify/Music/YouTube Music, permission behavior, physical display removal/reconnection, additional full-screen configurations and M5 energy measurements still require manual validation. Lyrics coverage and rights vary; no commercial lyrics are bundled. This is line sync, not word-level karaoke. Intel and Safari are not supported by this preview.
 
 Checksums identify the uploaded bytes and help detect transfer corruption. They do not substitute for Developer ID signing, notarization or an independent security audit. See README, VERIFICATION.md and PRIVACY.md for details.

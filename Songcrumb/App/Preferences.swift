@@ -11,6 +11,7 @@ struct Preferences: Codable, Equatable {
     var licensedEndpoint = ""
     var typeface: String? = "mono"
     var lyricFontDesign: Font.Design { typeface == "rounded" ? .rounded : (typeface == "system" ? .default : .monospaced) }
+    var attachedDisplayID: String?
     var placement: String? = "top"
     var topAttached: Bool { placement != "floating" }
     var fontSize = 18.0

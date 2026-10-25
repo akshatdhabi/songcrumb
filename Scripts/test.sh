@@ -7,9 +7,15 @@ xcrun swiftc -swift-version 5 -parse-as-library -module-cache-path "$task_root/b
   Songcrumb/Core/*.swift Tests/CoreChecks/*.swift -o build/CoreChecks
 build/CoreChecks
 xcrun swiftc -swift-version 5 -parse-as-library -module-cache-path "$task_root/build/module-cache" \
-  Songcrumb/Core/*.swift Songcrumb/App/Preferences.swift Songcrumb/App/LyricsService.swift Scripts/ProviderChecks.swift \
+  Songcrumb/Core/*.swift Songcrumb/App/Preferences.swift Songcrumb/App/LyricsService.swift Scripts/HTTPFixtures.swift Scripts/ProviderChecks.swift \
   -o build/ProviderChecks -framework SwiftUI -framework AppKit
 build/ProviderChecks
+xcrun swiftc -swift-version 5 -parse-as-library -module-cache-path "$task_root/build/module-cache" \
+  Songcrumb/Core/*.swift Songcrumb/App/Preferences.swift Songcrumb/App/LyricsService.swift \
+  Songcrumb/App/AppModel.swift Songcrumb/App/BrowserBridge.swift Songcrumb/App/DesktopPlayer.swift \
+  Songcrumb/App/DisplayCatalog.swift Songcrumb/App/Overlay.swift Scripts/HTTPFixtures.swift Scripts/AppChecks.swift \
+  -o build/AppChecks -framework SwiftUI -framework AppKit -framework Network -framework CryptoKit
+build/AppChecks
 xcrun swiftc -swift-version 5 -parse-as-library -module-cache-path "$task_root/build/module-cache" \
   Songcrumb/Core/*.swift Songcrumb/App/DesktopPlayer.swift Scripts/DesktopChecks.swift -o build/DesktopChecks
 build/DesktopChecks
