@@ -6,6 +6,7 @@ Environment: arm64 Mac, macOS 26.4.1, Swift 6.3.3 and Apple Command Line Tools. 
 
 - The native source set compiled for arm64-apple-macosx14.0 with SwiftUI, AppKit, Network and CryptoKit. The app was ad-hoc signed with hardened runtime and the Apple Events entitlement.
 - The generated Xcode project parses as a property list and includes every Swift source, Info.plist, entitlements, icon and a shared scheme. Local direct compilation validates the source set; it is not a completed Xcode GUI build.
+- GitHub Actions also passed the full Xcode Release build of the shared Songcrumb scheme, public-source hygiene check, native/provider/descriptor checks and real loopback/companion fixtures on `macos-15`. [Successful run for the initial source release](https://github.com/akshatdhabi/songcrumb/actions/runs/40174225913), commit `c5eaec507cb75d6a42ee3c98b0a923be8276e8ae`.
 - The native original-text preview launched and displayed a compact top-attached panel, bright active lyric and faded context. The panel uses a nonactivating NSPanel; locked mode ignores mouse events.
 - Core checks: 11 scenario groups covering timestamp parsing/offsets, seeks, explicitly unsynced text, malformed/simultaneous lines, stale/paused clocks, source selection, recording/version matching, identity collisions, HTTPS redirect policy, strict HTTP boundaries and attached geometry on notched/negative-coordinate display frames.
 - Provider/preferences checks: 9 scenario groups using intercepted HTTP, including exact-to-search selection, caches, 429 backoff, setup-free GitHub client identity, plain-text fallback, preservation of plain lyrics when optional search fails, malformed timing recovery, licensed attribution/cache assertions and numeric sanitization. No requests reached an external service.
@@ -24,7 +25,7 @@ Retained usable exact plain lyrics when optional search fails; rejected malforme
 - Signed-in YouTube Music in each supported browser: ads, background tabs, redesigns, local networking permissions, multiple tabs and suspension.
 - A real authorized LRCLIB/provider recording, plus network failures on an ordinary network. Fixtures validate app behavior, not remote catalogue accuracy or display rights.
 - Click-through focus behavior across real work apps, physical display removal, menu bar auto-hide, notch, Spaces, Stage Manager, full-screen and sleep/wake with live playback. Attached frame calculations are tested; all physical configurations are not.
-- Full Xcode build/CI and optional Swift Package XCTest execution.
+- Optional Swift Package XCTest execution; CI runs the standalone shared checks rather than an XCTest app bundle.
 - Instruments energy and performance measurements on the user’s M5 MacBook Air.
 - Developer ID signing, notarization and transferred-app Gatekeeper behavior before a consumer binary release.
 
