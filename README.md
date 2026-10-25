@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/readme-header.svg" width="100%" alt="Songcrumb — Keep the words close.">
+  <img src="docs/assets/readme-header.svg" width="100%" alt="Songcrumb: keep the words close.">
 </p>
 
 <p align="center">
@@ -15,73 +15,81 @@
   <a href="docs/SETUP.md">Setup guide</a>
 </p>
 
-<p align="center"><sub>macOS 14+ · Apple Silicon, including M5 · v1.1 developer preview · MIT</sub></p>
+<p align="center"><sub>macOS 14+ · Apple Silicon (M1 and later) · v1.1 developer preview · MIT</sub></p>
 
 <p align="center">
-  <img src="docs/media/desktop-demo.gif" width="100%" alt="Illustrated Mac desktop with Songcrumb attached beneath the menu bar, smoothly scrolling and highlighting original demo lyrics.">
-  <br><sub>From the interactive project-page preview. Illustrated desktop; original demo words.</sub>
+  <img src="docs/media/desktop-demo.gif" width="100%" alt="Illustrated Mac desktop with Songcrumb attached beneath the menu bar, scrolling and highlighting original demo lyrics.">
+  <br><sub>Illustrated desktop with original demo lyrics.</sub>
 </p>
 
-## Your soundtrack, within sight
+## What it does
 
-Songcrumb finds lyrics online and keeps a few lines in view while you work. The current line glows; the rest fades into the background.
+Play a song and Songcrumb finds its lyrics, then keeps three lines in view while you work. The current line glows and the rest fade back.
 
-- **Settle it in.** Attach beneath the menu bar or float anywhere. Choose its monitor, including in full screen. Lock it to let clicks pass through without taking focus.
-- **Make it yours.** Adjust the typeface, size, highlight, transparency and width.
-- **Follow the song.** Lyrics scroll to available timestamps. Plain lyrics remain clearly unsynced; temporary server failures retry quietly.
-
-| Your music | Connection |
+| | |
 | :--- | :--- |
-| Spotify | Desktop app · macOS Automation |
-| Apple Music | Desktop app · macOS Automation |
-| YouTube Music | Paired Chrome, Edge or Brave companion · experimental |
+| **Stays out of the way** | Attach it beneath the menu bar or float it anywhere. Lock it and clicks pass through to the app below. |
+| **Any screen** | Pick the monitor in Settings or the menu bar. It holds its place in full-screen apps and clears the camera notch. |
+| **Follows the song** | Synced lyrics scroll on time. Songs without timestamps show plain text, marked as unsynced. |
+| **Recovers on its own** | If the lyrics server hiccups, Songcrumb retries in the background. No alerts. |
+| **Yours to style** | Typeface, size, highlight colour, opacity and width. |
 
-## Make room for music
+## Works with
 
-1. **[Download the DMG](https://github.com/akshatdhabi/songcrumb/releases/download/v1.1.0/Songcrumb-1.1.0-arm64.dmg)** and drag Songcrumb into Applications. No Xcode needed. Prefer a ZIP? Expand it and move the app there instead.
-2. **Open Songcrumb.** Find its quotation-mark icon in the menu bar. Try **Preview overlay** to see it in action.
-3. **Connect your player** in Settings and allow its macOS Automation prompt. Lyrics lookup is already configured. No account or email needed.
+| Player | How it connects |
+| :--- | :--- |
+| Spotify | Desktop app, via macOS Automation |
+| Apple Music | Desktop app, via macOS Automation |
+| YouTube Music | Browser companion for Chrome, Edge or Brave (experimental) |
 
-**First launch:** this preview is ad-hoc signed and **not notarized by Apple**. macOS may require the app-specific **Open Anyway** option under **Privacy & Security**. See the [install guide](docs/INSTALL.txt) for the complete steps and checksums.
+No account, no email, no API key, no analytics. Songcrumb reads the track details and playback position from your player, and sends the song's title, artist, album and duration to the lyrics lookup. It doesn't capture audio or your screen, and it doesn't save lyrics or listening history to disk.
 
-For YouTube Music, install and pair the included browser companion using the [setup guide](docs/SETUP.md).
+## Install
+
+1. **[Download the DMG](https://github.com/akshatdhabi/songcrumb/releases/download/v1.1.0/Songcrumb-1.1.0-arm64.dmg)** and drag Songcrumb into Applications.
+2. **Open it.** The quotation-mark icon appears in your menu bar. Click **Preview overlay** to see it working before you connect anything.
+3. **Connect your player** in Settings and allow the macOS Automation prompt.
+
+**If macOS blocks the first launch:** this preview isn't notarized by Apple yet. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to Songcrumb. The [install guide](docs/INSTALL.txt) has checksums and full steps.
+
+YouTube Music needs the browser companion. Pairing takes a minute: see the [setup guide](docs/SETUP.md#set-up-youtube-music).
 
 <details>
-<summary><strong>A closer look at the native app</strong></summary>
+<summary><strong>Screenshots</strong></summary>
 
 <br>
-<p align="center"><img src="docs/media/attached-overlay.png" width="560" alt="The real native Songcrumb overlay with original preview lyrics."></p>
+<p align="center"><img src="docs/media/attached-overlay.png" width="560" alt="The native Songcrumb overlay showing original preview lyrics."></p>
 
 | Appearance | Music connections |
 | :---: | :---: |
 | ![Native appearance settings](docs/media/appearance.png) | ![Native music connection settings](docs/media/music-sources.png) |
 
-These are native app captures with original sample text. Music connections are off in the screenshots.
+Captured from the native app with original sample text and music connections off.
 
 </details>
 
 <details>
-<summary><strong>Build it yourself</strong></summary>
+<summary><strong>Build from source</strong></summary>
 
-Open **Songcrumb.xcodeproj** in Xcode, choose **Songcrumb → My Mac**, then Run. Configure your own development team for a stable Automation identity.
+Open **Songcrumb.xcodeproj** in Xcode, choose **Songcrumb → My Mac**, then Run. Set your own development team so macOS Automation permissions stick between builds.
 
-Or use Apple’s Command Line Tools from the project folder:
+Or build with Apple's Command Line Tools:
 
 ```sh
 ./Scripts/build.sh
 open build/Songcrumb.app
 ```
 
-SwiftUI + AppKit, arm64, with no third-party Swift dependencies. Run `./Scripts/test.sh` for the native and browser-companion checks; the companion checks also require Node.js. See [verification](VERIFICATION.md) for results and remaining manual checks.
+SwiftUI and AppKit, arm64, zero third-party Swift dependencies. `./Scripts/test.sh` runs the native and browser-companion checks (the companion checks need Node.js). [VERIFICATION.md](VERIFICATION.md) lists what's tested and what still needs a manual pass.
 
 </details>
 
-## A small, open project
+## Where lyrics come from
 
-Lyrics come from community-supplied LRCLIB or a licensed provider you configure. Matching, coverage and timing vary; API availability does not grant rights to every lyric. Songcrumb does not extract lyrics from music players. Live player compatibility and M5 battery use still need manual validation. [Provider and permission details →](docs/SETUP.md)
+Songcrumb looks up lyrics on [LRCLIB](https://lrclib.net), a free community database, or from a licensed provider you configure yourself. It matches on title, artist, album and duration, so coverage and timing depend on what the community has submitted. Songcrumb doesn't pull lyrics out of Spotify, Apple Music or YouTube Music. [Provider details →](docs/SETUP.md)
 
-[Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Verification](VERIFICATION.md) · [Release notes](docs/RELEASE-NOTES.md) · [Local project page](docs/index.html)
+[Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Verification](VERIFICATION.md) · [Release notes](docs/RELEASE-NOTES.md) · [Changelog](CHANGELOG.md)
 
-Made by **Akshat Dhabi** for the songs between everything else.
+Made by **[Akshat Dhabi](https://github.com/akshatdhabi)** for the songs between everything else.
 
-<sub>[MIT licensed](LICENSE). Covers the code and original artwork/demo text; third-party lyrics retain their own rights.</sub>
+<sub>[MIT licensed](LICENSE). Covers the code, artwork and demo text. Lyrics belong to their rights holders.</sub>

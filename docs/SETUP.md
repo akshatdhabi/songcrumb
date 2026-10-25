@@ -20,7 +20,7 @@ Closing Settings leaves Songcrumb running in the menu bar. Choose **Quit** there
 
 ## Compiled download
 
-Use the [versioned Mac preview release](https://github.com/akshatdhabi/songcrumb/releases/tag/v1.0.0) for a DMG or ZIP that runs without Xcode. Open the DMG, drag Songcrumb to Applications and eject it. The ZIP contains the same app. Read [INSTALL.txt](INSTALL.txt) for the app-specific macOS approval steps and checksums. This preview is ad-hoc signed, not notarized; a local source build remains an alternative. The release includes an optional YouTube Music companion ZIP.
+Use the [versioned Mac preview release](https://github.com/akshatdhabi/songcrumb/releases/tag/v1.1.0) for a DMG or ZIP that runs without Xcode. Open the DMG, drag Songcrumb to Applications and eject it. The ZIP contains the same app. Read [INSTALL.txt](INSTALL.txt) for the app-specific macOS approval steps and checksums. This preview is ad-hoc signed, not notarized; a local source build remains an alternative. The release includes an optional YouTube Music companion ZIP.
 
 ## Build and run in Xcode
 
@@ -68,7 +68,7 @@ The companion sends roughly one update per second while media events arrive, wit
 
 ## Lyrics sources and rights
 
-**Automatic internet lookup is the main workflow.** LRCLIB’s documented public API is preselected. Requests identify the app as `Songcrumb/1.0.0 (https://github.com/akshatdhabi/songcrumb)`. No listener email, account or API key is required.
+**Automatic internet lookup is the main workflow.** LRCLIB’s documented public API is preselected. Requests identify the app as `Songcrumb/1.1.0 (https://github.com/akshatdhabi/songcrumb)`. No listener email, account or API key is required.
 
 On every recording change, Songcrumb:
 
